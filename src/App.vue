@@ -32,6 +32,22 @@ const mixedItems: MixedItem[] = [
   }
 ]
 
+const randomItems = [
+  {
+    id: 1
+  },
+  {
+    id: 2,
+    name: 'Oleksii'
+  },
+  {
+    id: 3,
+    pet: {
+      name: 'Miko',
+      age: 3
+    }
+  }
+]
 </script>
 
 <template>
@@ -39,10 +55,13 @@ const mixedItems: MixedItem[] = [
     {{ item.stringValue }}
   </ActivityList>
 
-
   <ActivityList title="Some Mixed Items" :items="mixedItems" v-slot="{ item }">
     <code v-if="typeof item.theValue === 'number'">{{ item.theValue }}</code>
     <p v-else-if="typeof item.theValue === 'string'">{{ item.theValue }}</p>
     <div v-else>?????</div>
+  </ActivityList>
+
+  <ActivityList title="Random Items" :items="randomItems" v-slot="{ item }">
+    <pre>{{ JSON.stringify(item, undefined, 4) }}</pre>
   </ActivityList>
 </template>
