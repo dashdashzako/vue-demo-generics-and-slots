@@ -1,48 +1,81 @@
-# vue-demo-generics
+# Vue Demo — Generics & Slots
 
-This template should help get you started developing with Vue 3 in Vite.
+This project demonstrates **generic components with typed slots** in Vue 3, a feature introduced in Vue 3.3.
 
-## Recommended IDE Setup
+## Purpose
 
-[VS Code](https://code.visualstudio.com/) + [Vue (Official)](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
+The goal is to show how to build a reusable list component that:
 
-## Recommended Browser Setup
+- accepts any type of items via a TypeScript generic parameter
+- exposes a slot whose type is automatically inferred from the data passed in
+- guarantees type safety in the parent template without any manual casting
 
-- Chromium-based browsers (Chrome, Edge, Brave, etc.):
-  - [Vue.js devtools](https://chromewebstore.google.com/detail/vuejs-devtools/nhdogjmejiglipccpnnnanhbledajbpd)
-  - [Turn on Custom Object Formatter in Chrome DevTools](http://bit.ly/object-formatters)
-- Firefox:
-  - [Vue.js devtools](https://addons.mozilla.org/en-US/firefox/addon/vue-js-devtools/)
-  - [Turn on Custom Object Formatter in Firefox DevTools](https://fxdx.dev/firefox-devtools-custom-object-formatters/)
+## How it works
 
-## Type Support for `.vue` Imports in TS
+### The base type
 
-TypeScript cannot handle type information for `.vue` imports by default, so we replace the `tsc` CLI with `vue-tsc` for type checking. In editors, we need [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) to make the TypeScript language service aware of `.vue` types.
-
-## Customize configuration
-
-See [Vite Configuration Reference](https://vite.dev/config/).
-
-## Project Setup
-
-```sh
-npm install
+```ts
+// src/types.ts
+export type BaseActivityItem = {
+  id: number;
+};
 ```
 
-### Compile and Hot-Reload for Development
+All items passed to the component must at minimum have a numeric `id`.
 
-```sh
-npm run dev
+### The generic `ActivityList` component
+
+```vue
+<!-- src/components/ActivityList.vue -->
+<script setup lang="ts" generic="T extends BaseActivityItem">
+type Props = {
+  title: string
+  items: T[]
+}
+
+defineProps<Props>()
+
+defineSlots<{
+  default(props: { item: T }): unknown
+}>()
+</script>
 ```
 
-### Type-Check, Compile and Minify for Production
+The `generic="T extends BaseActivityItem"` attribute on `<script setup>` declares a type parameter `T`.
+`defineSlots` binds that `T` to the `default` slot, which lets Vue and TypeScript infer the exact type of `item` in the parent when using `v-slot`.
 
-```sh
-npm run build
+### Usage in `App.vue`
+
+The component is used three times with different data shapes. In each case, TypeScript knows the exact type of `item` inside the slot:
+
+```vue
+<!-- item is typed as MyNumberItem → item.stringValue is available -->
+<ActivityList title="Some Number Items" :items="numberItems" v-slot="{ item }">
+  {{ item.stringValue }}
+</ActivityList>
+
+<!-- item is typed as MixedItem → item.theValue is number | string -->
+<ActivityList title="Some Mixed Items" :items="mixedItems" v-slot="{ item }">
+  <code v-if="typeof item.theValue === 'number'">{{ item.theValue }}</code>
+  <p v-else>{{ item.theValue }}</p>
+</ActivityList>
 ```
 
-### Lint with [ESLint](https://eslint.org/)
+## Tech stack
 
-```sh
-npm run lint
+- **Vue 3.5** — Composition API, `<script setup>`
+- **TypeScript 5.9**
+- **Vite 7** — build tool and dev server
+- **vue-tsc** — type checking in templates
+- **ESLint + oxlint + oxfmt** — linting and formatting
+
+## Scripts
+
+```bash
+npm install          # install dependencies
+npm run dev          # start the development server
+npm run build        # type-check + production build
+npm run type-check   # type-check only
+npm run lint         # lint (oxlint + eslint)
+npm run format       # format source code
 ```
